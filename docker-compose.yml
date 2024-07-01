@@ -1,0 +1,9 @@
+version: '3.1'
+
+services:
+  db:
+    build: ./database
+    container_name: task-tracker-postgres
+    restart: always
+    ports:
+      - "5436:5432"
