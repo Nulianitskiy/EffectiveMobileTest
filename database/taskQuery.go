@@ -17,12 +17,12 @@ func (d *Database) AddTask(t model.Task) error {
 	return nil
 }
 
-func (d *Database) AssignPeopleOnTask(peopleId int, t model.Task) error {
+func (d *Database) AssignPeopleOnTask(t model.Task) error {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
 	query := `UPDATE task SET people_id = $2 WHERE id = $1`
-	_, err := d.db.Exec(query, t.Id, peopleId)
+	_, err := d.db.Exec(query, t.Id, t.PeopleId)
 	if err != nil {
 		return err
 	}

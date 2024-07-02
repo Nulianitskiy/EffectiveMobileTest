@@ -7,3 +7,12 @@ services:
     restart: always
     ports:
       - "5436:5432"
+
+  tracker:
+    build: ./
+    container_name: task-tracker
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db

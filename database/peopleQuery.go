@@ -57,8 +57,8 @@ func (d *Database) AddPeople(p model.People) error {
 	return nil
 }
 
-// updatePeople обновление информации о сотруднике
-func (d *Database) updatePeople(p model.People) error {
+// UpdatePeople обновление информации о сотруднике
+func (d *Database) UpdatePeople(p model.People) error {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
@@ -70,8 +70,8 @@ func (d *Database) updatePeople(p model.People) error {
 	return nil
 }
 
-// deletePeople удаление информации о сотруднике
-func (d *Database) deletePeople(id int) error {
+// DeletePeople удаление информации о сотруднике
+func (d *Database) DeletePeople(id int) error {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
