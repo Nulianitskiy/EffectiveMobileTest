@@ -8,13 +8,13 @@ import (
 )
 
 type People struct {
-	Id             int    `db:"id"`
-	PassportSerie  int    `db:"passport_serie"`
-	PassportNumber int    `db:"passport_number"`
-	Name           string `db:"name"`
-	Surname        string `db:"surname"`
-	Patronymic     string `db:"patronymic"`
-	Address        string `db:"address"`
+	Id             int    `db:"id" json:"id"`
+	PassportSerie  int    `db:"passport_serie" json:"passport_serie"`
+	PassportNumber int    `db:"passport_number" json:"passport_number"`
+	Name           string `db:"name" json:"name"`
+	Surname        string `db:"surname" json:"surname"`
+	Patronymic     string `db:"patronymic" json:"patronymic,omitempty"`
+	Address        string `db:"address" json:"address"`
 }
 
 type passport struct {

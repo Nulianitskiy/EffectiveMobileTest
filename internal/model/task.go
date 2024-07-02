@@ -8,12 +8,12 @@ import (
 )
 
 type Task struct {
-	Id          int
-	PeopleId    int
-	Name        string
-	Description string
-	TimeStart   time.Time
-	TimeEnd     time.Time
+	Id          int       `db:"id" json:"id"`
+	PeopleId    int       `db:"people_id" json:"people_id,omitempty"`
+	Name        string    `db:"name" json:"name"`
+	Description string    `db:"description" json:"description"`
+	TimeStart   time.Time `db:"time_start" json:"time_start,omitempty"`
+	TimeEnd     time.Time `db:"time_end" json:"time_end,omitempty"`
 }
 
 func (t *Task) StartTask() error {

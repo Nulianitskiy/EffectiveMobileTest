@@ -16,4 +16,5 @@ func SetupRoutes(r *gin.Engine) {
 	r.PATCH("/taskStart", controller.StartTask)
 	r.PATCH("/taskEnd", controller.EndTask)
 	r.GET("/task", controller.GetTasks)
+
 }

@@ -1,0 +1,317 @@
+basePath: /
+definitions:
+  controller.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  controller.FilterParams:
+    properties:
+      filters:
+        additionalProperties: true
+        type: object
+      page:
+        type: integer
+      page_size:
+        type: integer
+    required:
+    - page
+    - page_size
+    type: object
+  model.People:
+    properties:
+      address:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      passport_number:
+        type: integer
+      passport_serie:
+        type: integer
+      patronymic:
+        type: string
+      surname:
+        type: string
+    type: object
+  model.Task:
+    properties:
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      people_id:
+        type: integer
+      time_end:
+        type: string
+      time_start:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    name: Никита Ульяницкий
+    url: https://t.me/Nulianitskiy
+  description: Тестовое задание для Effective Mobile.
+  title: Task Tracker
+  version: "1.0"
+paths:
+  /allPeople:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список всех сотрудников с возможностью фильтрации
+      parameters:
+      - description: Параметры фильтрации
+        in: body
+        name: filterParams
+        required: true
+        schema:
+          $ref: '#/definitions/controller.FilterParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.People'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+      summary: Получить всех сотрудников
+      tags:
+      - employees
+  /people:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет сотрудника по идентификатору
+      parameters:
+      - description: Идентификатор сотрудника
+        in: query
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+      summary: Удалить сотрудника
+      tags:
+      - employees
+    post:
+      consumes:
+      - application/json
+      description: Добавляет нового сотрудника по номеру паспорта
+      parameters:
+      - description: Номер паспорта (серия и номер через пробел)
+        in: query
+        name: passportNumber
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+      summary: Добавить сотрудника
+      tags:
+      - employees
+    put:
+      consumes:
+      - application/json
+      description: Обновляет информацию о сотруднике
+      parameters:
+      - description: Информация о сотруднике
+        in: body
+        name: people
+        required: true
+        schema:
+          $ref: '#/definitions/model.People'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+      summary: Обновить информацию о сотруднике
+      tags:
+      - employees
+  /task:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список задач для указанного сотрудника
+      parameters:
+      - description: Информация о сотруднике
+        in: body
+        name: people
+        required: true
+        schema:
+          $ref: '#/definitions/model.People'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Task'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+      summary: Получить задачи сотрудника
+      tags:
+      - tasks
+    post:
+      consumes:
+      - application/json
+      description: Добавляет новую задачу
+      parameters:
+      - description: Информация о задаче
+        in: body
+        name: task
+        required: true
+        schema:
+          $ref: '#/definitions/model.Task'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+      summary: Добавить задачу
+      tags:
+      - tasks
+  /taskAssign:
+    patch:
+      consumes:
+      - application/json
+      description: Назначает сотрудников на указанную задачу
+      parameters:
+      - description: Информация о задаче
+        in: body
+        name: task
+        required: true
+        schema:
+          $ref: '#/definitions/model.Task'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+      summary: Назначить сотрудников на задачу
+      tags:
+      - tasks
+  /taskEnd:
+    patch:
+      consumes:
+      - application/json
+      description: Завершает отслеживание времени задачи
+      parameters:
+      - description: Информация о задаче
+        in: body
+        name: task
+        required: true
+        schema:
+          $ref: '#/definitions/model.Task'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+      summary: Завершить задачу
+      tags:
+      - tasks
+  /taskStart:
+    patch:
+      consumes:
+      - application/json
+      description: Начинает отслеживание времени задачи
+      parameters:
+      - description: Информация о задаче
+        in: body
+        name: task
+        required: true
+        schema:
+          $ref: '#/definitions/model.Task'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+      summary: Начать задачу
+      tags:
+      - tasks
+swagger: "2.0"
