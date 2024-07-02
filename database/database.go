@@ -1,9 +1,13 @@
 package database
 
 import (
+	"GoTimeTracker/pkg/logger"
+	"fmt"
 	"github.com/jmoiron/sqlx"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
-	"log"
+	"go.uber.org/zap"
+	"os"
 	"sync"
 )
 
@@ -20,31 +24,55 @@ var (
 func GetInstance() (*Database, error) {
 	var err error
 	once.Do(func() {
+		logger.Info("Создание нового экземпляра Database")
 		instance, err = newDatabase()
 		if err != nil {
-			log.Fatal("Ошибка создания экземпляра Database:", err)
+			logger.Fatal("Ошибка создания экземпляра Database", zap.Error(err))
 		}
 	})
 	return instance, err
 }
 
 func newDatabase() (*Database, error) {
-	connectionString := "postgres://dbuser:stoic@db:5436/tasktrackerdb?sslmode=disable"
+	logger.Info("Загрузка файла .env для конфигурации базы данных")
+	err := godotenv.Load()
+	if err != nil {
+		logger.Fatal("Ошибка загрузки файла .env", zap.Error(err))
+	}
+
+	dbUser := os.Getenv("POSTGRES_USER")
+	dbPassword := os.Getenv("POSTGRES_PASSWORD")
+	dbHost := os.Getenv("POSTGRES_HOST")
+	dbPort := os.Getenv("POSTGRES_PORT")
+	dbName := os.Getenv("POSTGRES_DB")
+
+	connectionString := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", dbUser, dbPassword, dbHost, dbPort, dbName)
+
+	logger.Debug("Строка подключения к базе данных сформирована", zap.String("connectionString", connectionString))
+
 	db, err := sqlx.Connect("postgres", connectionString)
 	if err != nil {
-		log.Fatal("Ошибка подключения к базе данных:", err)
+		logger.Fatal("Ошибка подключения к базе данных", zap.Error(err))
 	}
 
 	// Ping базы данных для проверки подключения
+	logger.Info("Проверка подключения к базе данных")
 	err = db.Ping()
 	if err != nil {
-		log.Fatal("Ошибка проверки подключения к базе данных:", err)
+		logger.Fatal("Ошибка проверки подключения к базе данных", zap.Error(err))
 	}
-	log.Println("Подключение к базе данных PostgreSQL успешно")
+	logger.Info("Подключение к базе данных PostgreSQL успешно")
 
 	return &Database{db: db}, nil
 }
 
 func (d *Database) Close() error {
-	return d.db.Close()
+	logger.Info("Закрытие подключения к базе данных")
+	err := d.db.Close()
+	if err != nil {
+		logger.Error("Ошибка при закрытии подключения к базе данных", zap.Error(err))
+	} else {
+		logger.Info("Подключение к базе данных успешно закрыто")
+	}
+	return err
 }

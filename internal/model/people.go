@@ -29,13 +29,21 @@ func (p *People) UnmarshalJSON(data []byte) error {
 
 	d := strings.Split(aux.PassportNumber, " ")
 
-	if len(d) == 2 {
-		//TODO доделать проверку
-		p.PassportSerie, _ = strconv.Atoi(d[0])
-		p.PassportNumber, _ = strconv.Atoi(d[1])
-	} else {
-		return fmt.Errorf("invalid passportNumber")
+	if len(d) != 2 {
+		return fmt.Errorf("Неверный формат passportNumber: ожидалось 'serie number', got '%s'", aux.PassportNumber)
 	}
+
+	serie, err := strconv.Atoi(d[0])
+	if err != nil {
+		return fmt.Errorf("Неверный формат passportSerie: %s", err)
+	}
+	number, err := strconv.Atoi(d[1])
+	if err != nil {
+		return fmt.Errorf("Неверный формат passportNumber: %s", err)
+	}
+
+	p.PassportSerie = serie
+	p.PassportNumber = number
 
 	return nil
 }

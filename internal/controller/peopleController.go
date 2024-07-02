@@ -1,9 +1,11 @@
 package controller
 
 import (
-	dbase "GoTimeTracker/database"
+	"GoTimeTracker/database"
 	"GoTimeTracker/internal/model"
+	"GoTimeTracker/pkg/logger"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"net/http"
 	"strconv"
 	"strings"
@@ -22,19 +24,22 @@ func GetAllPeople(ctx *gin.Context) {
 		return
 	}
 
-	db, err := dbase.GetInstance()
+	db, err := database.GetInstance()
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Database connection not found"})
+		logger.Error("Ошибка получения экземпляра базы данных", zap.Error(err))
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	people, err := db.GetAllPeople(filterParams.Page, filterParams.PageSize, filterParams.Filters)
 	if err != nil {
+		logger.Error("Ошибка при получении списка сотрудников", zap.Error(err))
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	ctx.JSON(http.StatusOK, people)
+	logger.Info("Успешно получен список сотрудников")
 }
 
 func AddPeople(ctx *gin.Context) {
@@ -47,19 +52,22 @@ func AddPeople(ctx *gin.Context) {
 		PassportNumber: number,
 	}
 
-	db, err := dbase.GetInstance()
+	db, err := database.GetInstance()
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Database connection not found"})
+		logger.Error("Ошибка получения экземпляра базы данных", zap.Error(err))
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	err = db.AddPeople(people)
 	if err != nil {
+		logger.Error("Ошибка при добавлении сотрудника", zap.Error(err))
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	ctx.JSON(http.StatusOK, nil)
+	logger.Info("Сотрудник успешно добавлен")
 }
 
 func UpdatePeople(ctx *gin.Context) {
@@ -69,19 +77,22 @@ func UpdatePeople(ctx *gin.Context) {
 		return
 	}
 
-	db, err := dbase.GetInstance()
+	db, err := database.GetInstance()
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Database connection not found"})
+		logger.Error("Ошибка получения экземпляра базы данных", zap.Error(err))
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	err = db.UpdatePeople(p)
 	if err != nil {
+		logger.Error("Ошибка при обновлении информации о сотруднике", zap.Error(err))
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	ctx.JSON(http.StatusOK, nil)
+	logger.Info("Информация о сотруднике успешно обновлена")
 }
 
 func DeletePeople(ctx *gin.Context) {
@@ -91,17 +102,20 @@ func DeletePeople(ctx *gin.Context) {
 		return
 	}
 
-	db, err := dbase.GetInstance()
+	db, err := database.GetInstance()
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Database connection not found"})
+		logger.Error("Ошибка получения экземпляра базы данных", zap.Error(err))
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	err = db.DeletePeople(id)
 	if err != nil {
+		logger.Error("Ошибка при удалении информации о сотруднике", zap.Error(err))
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	ctx.JSON(http.StatusOK, nil)
+	logger.Info("Информация о сотруднике успешно удалена")
 }

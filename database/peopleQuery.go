@@ -2,7 +2,9 @@ package database
 
 import (
 	"GoTimeTracker/internal/model"
+	"GoTimeTracker/pkg/logger"
 	"fmt"
+	"go.uber.org/zap"
 	"strings"
 )
 
@@ -37,8 +39,10 @@ func (d *Database) GetAllPeople(page int, pageSize int, filters map[string]inter
 	var peoples []model.People
 	err := d.db.Select(&peoples, query.String(), args...)
 	if err != nil {
+		logger.Error("Ошибка при получении списка сотрудников", zap.Error(err))
 		return nil, err
 	}
+	logger.Info("Получен список сотрудников", zap.Int("count", len(peoples)))
 	return peoples, nil
 }
 
@@ -47,13 +51,15 @@ func (d *Database) AddPeople(p model.People) error {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
-	query := `INSERT INTO people (passport_serie, passport_number) VALUES ($1, $2) RETURNING id`
+	query := `INSERT INTO people (name, surname, patronymic, address) VALUES ($1, $2, $3, $4) RETURNING id`
 	var id int
-	err := d.db.QueryRow(query, p.PassportSerie, p.PassportNumber).Scan(&id)
+	err := d.db.QueryRow(query, p.Name, p.Surname, p.Patronymic, p.Address).Scan(&id)
 	if err != nil {
+		logger.Error("Ошибка при добавлении сотрудника", zap.Error(err))
 		return err
 	}
 	p.Id = id
+	logger.Info("Сотрудник успешно добавлен", zap.Int("id", p.Id))
 	return nil
 }
 
@@ -65,8 +71,10 @@ func (d *Database) UpdatePeople(p model.People) error {
 	query := `UPDATE people SET name = $2, surname = $3, patronymic = $4, address = $5 WHERE id = $1`
 	_, err := d.db.Exec(query, p.Id, p.Name, p.Surname, p.Patronymic, p.Address)
 	if err != nil {
+		logger.Error("Ошибка при обновлении информации о сотруднике", zap.Error(err), zap.Int("id", p.Id))
 		return err
 	}
+	logger.Info("Информация о сотруднике успешно обновлена", zap.Int("id", p.Id))
 	return nil
 }
 
@@ -78,7 +86,9 @@ func (d *Database) DeletePeople(id int) error {
 	query := `DELETE FROM people WHERE id = $1`
 	_, err := d.db.Exec(query, id)
 	if err != nil {
+		logger.Error("Ошибка при удалении информации о сотруднике", zap.Error(err), zap.Int("id", id))
 		return err
 	}
+	logger.Info("Информация о сотруднике успешно удалена", zap.Int("id", id))
 	return nil
 }
