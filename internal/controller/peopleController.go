@@ -7,31 +7,40 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 )
-
-type FilterParams struct {
-	Page     int                    `json:"page" binding:"required"`
-	PageSize int                    `json:"page_size" binding:"required"`
-	Filters  map[string]interface{} `json:"filters"`
-}
 
 // GetAllPeople godoc
 //
 //	@Summary		Получить всех сотрудников
 //	@Description	Возвращает список всех сотрудников с возможностью фильтрации
-//	@Tags			employees
+//	@Tags			people
 //	@Accept			json
 //	@Produce		json
-//	@Param			filterParams	body		FilterParams	true	"Параметры фильтрации"
-//	@Success		200				{array}		model.People
-//	@Failure		400				{object}	ErrorResponse
-//	@Failure		500				{object}	ErrorResponse
+//
+//	@Param			page		query		int		true	"Страница"													example(0)
+//	@Param			page_size	query		int		true	"Количество объектов на странице"							example(5)
+//	@Param			filter		query		string	false	"Фильтр (название параметра и параметр через двоеточие)"	example(name:Иванов)
+//
+//	@Success		200			{array}		model.People
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
 //	@Router			/allPeople [get]
 func GetAllPeople(ctx *gin.Context) {
-	var filterParams FilterParams
-	if err := ctx.ShouldBindJSON(&filterParams); err != nil {
+	page := ctx.Query("page")
+	pageSize := ctx.Query("page_size")
+
+	pageValue, err := strconv.Atoi(page)
+	if err != nil {
+		logger.Error("Ошибка при парсинге значении страницы", zap.Error(err))
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		return
+	}
+	pageSizeValue, err := strconv.Atoi(pageSize)
+	if err != nil {
+		logger.Error("Ошибка при парсинге количества страниц", zap.Error(err))
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -43,7 +52,13 @@ func GetAllPeople(ctx *gin.Context) {
 		return
 	}
 
-	people, err := db.GetAllPeople(filterParams.Page, filterParams.PageSize, filterParams.Filters)
+	filter := ctx.Query("filter")
+	params := []string{"", ""}
+	if len(filter) != 0 {
+		params = strings.Split(filter, ":")
+	}
+
+	people, err := db.GetAllPeople(pageValue, pageSizeValue, params[0], params[1])
 	if err != nil {
 		logger.Error("Ошибка при получении списка сотрудников", zap.Error(err))
 		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
@@ -58,18 +73,39 @@ func GetAllPeople(ctx *gin.Context) {
 //
 //	@Summary		Добавить сотрудника
 //	@Description	Добавляет нового сотрудника по номеру паспорта
-//	@Tags			employees
+//	@Tags			people
 //	@Accept			json
 //	@Produce		json
-//	@Param			passportNumber	query	string	true	"Номер паспорта (серия и номер через пробел)"
+//	@Param			passportNumber	query	string	true	"Номер паспорта (серия и номер через пробел)"	example(1234 567890)
 //	@Success		200
 //	@Failure		400	{object}	ErrorResponse
 //	@Failure		500	{object}	ErrorResponse
 //	@Router			/people [post]
 func AddPeople(ctx *gin.Context) {
-	passport := strings.Split(ctx.Query("passportNumber"), " ")
-	serie, _ := strconv.Atoi(passport[0])
-	number, _ := strconv.Atoi(passport[1])
+	passportParam := ctx.Query("passportNumber")
+	passport, err := url.QueryUnescape(passportParam)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "Неверный формат номера паспорта"})
+		return
+	}
+
+	passportParts := strings.Split(passport, " ")
+	if len(passportParts) != 2 {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "Неверный формат номера паспорта"})
+		return
+	}
+
+	serie, err := strconv.Atoi(passportParts[0])
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "Неверный формат серии паспорта"})
+		return
+	}
+
+	number, err := strconv.Atoi(passportParts[1])
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "Неверный формат номера паспорта"})
+		return
+	}
 
 	people := model.People{
 		PassportSerie:  serie,
@@ -98,10 +134,10 @@ func AddPeople(ctx *gin.Context) {
 //
 //	@Summary		Обновить информацию о сотруднике
 //	@Description	Обновляет информацию о сотруднике
-//	@Tags			employees
+//	@Tags			people
 //	@Accept			json
 //	@Produce		json
-//	@Param			people	body	model.People	true	"Информация о сотруднике"
+//	@Param			people	body	model.People	true	"Информация о сотруднике (серия и номер не изменяются)"
 //	@Success		200
 //	@Failure		400	{object}	ErrorResponse
 //	@Failure		500	{object}	ErrorResponse
@@ -135,7 +171,7 @@ func UpdatePeople(ctx *gin.Context) {
 //
 //	@Summary		Удалить сотрудника
 //	@Description	Удаляет сотрудника по идентификатору
-//	@Tags			employees
+//	@Tags			people
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	query	int	true	"Идентификатор сотрудника"

@@ -14,6 +14,7 @@ type Task struct {
 	Description string    `db:"description" json:"description"`
 	TimeStart   time.Time `db:"time_start" json:"time_start,omitempty"`
 	TimeEnd     time.Time `db:"time_end" json:"time_end,omitempty"`
+	Duration    string    `db:"duration" json:"duration,omitempty"`
 }
 
 func (t *Task) StartTask() error {

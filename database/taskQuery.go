@@ -4,94 +4,84 @@ import (
 	"GoTimeTracker/internal/model"
 	"GoTimeTracker/pkg/logger"
 	"go.uber.org/zap"
+	"time"
 )
 
 // AddTask Добавить задачу
-func (d *Database) AddTask(t model.Task) error {
+func (d *Database) AddTask(name, description string) error {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
 	query := `INSERT INTO task (name, description) VALUES ($1, $2) RETURNING id`
 	var id int
-	err := d.db.QueryRow(query, t.Name, t.Description).Scan(&id)
+	err := d.db.QueryRow(query, name, description).Scan(&id)
 	if err != nil {
 		logger.Error("Ошибка при добавлении задачи", zap.Error(err))
 		return err
 	}
-	t.Id = id
-	logger.Info("Задача успешно добавлена", zap.Int("id", t.Id))
+	logger.Info("Задача успешно добавлена", zap.Int("id", id))
 	return nil
 }
 
 // AssignPeopleOnTask Назначить сотрудников на задачу
-func (d *Database) AssignPeopleOnTask(t model.Task) error {
+func (d *Database) AssignPeopleOnTask(id, peopleId int) error {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
 	query := `UPDATE task SET people_id = $2 WHERE id = $1`
-	_, err := d.db.Exec(query, t.Id, t.PeopleId)
+	_, err := d.db.Exec(query, id, peopleId)
 	if err != nil {
-		logger.Error("Ошибка при назначении сотрудников на задачу", zap.Error(err), zap.Int("taskId", t.Id))
+		logger.Error("Ошибка при назначении сотрудников на задачу", zap.Error(err), zap.Int("taskId", id))
 		return err
 	}
-	logger.Info("Сотрудники успешно назначены на задачу", zap.Int("taskId", t.Id))
+	logger.Info("Сотрудники успешно назначены на задачу", zap.Int("taskId", id))
 	return nil
 }
 
 // StartTaskTime Начать отслеживание времени задачи
-func (d *Database) StartTaskTime(t model.Task) error {
+func (d *Database) StartTaskTime(id int) error {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
-	if err := t.StartTask(); err != nil {
-		logger.Error("Ошибка при начале отслеживания времени задачи", zap.Error(err), zap.Int("taskId", t.Id))
-		return err
-	}
-
 	query := `UPDATE task SET time_start = $2 WHERE id = $1`
-	_, err := d.db.Exec(query, t.Id, t.TimeStart)
+	_, err := d.db.Exec(query, id, time.Now())
 	if err != nil {
-		logger.Error("Ошибка при обновлении времени начала задачи", zap.Error(err), zap.Int("taskId", t.Id))
+		logger.Error("Ошибка при обновлении времени начала задачи", zap.Error(err), zap.Int("taskId", id))
 		return err
 	}
-	logger.Info("Время начала задачи успешно обновлено", zap.Int("taskId", t.Id))
+	logger.Info("Время начала задачи успешно обновлено", zap.Int("taskId", id))
 	return nil
 }
 
 // EndTaskTime Завершить отслеживание времени задачи
-func (d *Database) EndTaskTime(t model.Task) error {
+func (d *Database) EndTaskTime(id int) error {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
-	if err := t.EndTask(); err != nil {
-		logger.Error("Ошибка при завершении отслеживания времени задачи", zap.Error(err), zap.Int("taskId", t.Id))
-		return err
-	}
-
 	query := `UPDATE task SET time_end = $2 WHERE id = $1`
-	_, err := d.db.Exec(query, t.Id, t.TimeEnd)
+	_, err := d.db.Exec(query, id, time.Now())
 	if err != nil {
-		logger.Error("Ошибка при обновлении времени завершения задачи", zap.Error(err), zap.Int("taskId", t.Id))
+		logger.Error("Ошибка при обновлении времени завершения задачи", zap.Error(err), zap.Int("taskId", id))
 		return err
 	}
-	logger.Info("Время завершения задачи успешно обновлено", zap.Int("taskId", t.Id))
+	logger.Info("Время завершения задачи успешно обновлено", zap.Int("taskId", id))
 	return nil
 }
 
 // GetPeopleTasks Получить задачи для конкретного сотрудника
-func (d *Database) GetPeopleTasks(p model.People) ([]model.Task, error) {
+func (d *Database) GetPeopleTasks(peopleId int) ([]model.Task, error) {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
 	var tasks []model.Task
 
-	query := "SELECT *, EXTRACT(epoch FROM (time_end - time_start)) AS duration FROM task WHERE people_id = $1 ORDER BY duration DESC "
+	query := "SELECT *, TO_CHAR(time_end - time_start, 'HH24:MI:SS') AS duration  FROM task WHERE people_id = $1 ORDER BY duration DESC "
 
-	err := d.db.Select(&tasks, query, p.Id)
+	err := d.db.Select(&tasks, query, peopleId)
 	if err != nil {
-		logger.Error("Ошибка при получении задач для сотрудника", zap.Error(err), zap.Int("peopleId", p.Id))
+		logger.Error("Ошибка при получении задач для сотрудника", zap.Error(err), zap.Int("peopleId", peopleId))
 		return nil, err
 	}
-	logger.Info("Получен список задач для сотрудника", zap.Int("peopleId", p.Id), zap.Int("tasksCount", len(tasks)))
+	logger.Info("Получен список задач для сотрудника", zap.Int("peopleId", peopleId), zap.Int("tasksCount", len(tasks)))
 	return tasks, nil
 }

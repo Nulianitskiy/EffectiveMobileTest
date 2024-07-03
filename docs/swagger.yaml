@@ -5,19 +5,6 @@ definitions:
       error:
         type: string
     type: object
-  controller.FilterParams:
-    properties:
-      filters:
-        additionalProperties: true
-        type: object
-      page:
-        type: integer
-      page_size:
-        type: integer
-    required:
-    - page
-    - page_size
-    type: object
   model.People:
     properties:
       address:
@@ -38,6 +25,8 @@ definitions:
   model.Task:
     properties:
       description:
+        type: string
+      duration:
         type: string
       id:
         type: integer
@@ -65,12 +54,23 @@ paths:
       - application/json
       description: Возвращает список всех сотрудников с возможностью фильтрации
       parameters:
-      - description: Параметры фильтрации
-        in: body
-        name: filterParams
+      - description: Страница
+        example: 0
+        in: query
+        name: page
         required: true
-        schema:
-          $ref: '#/definitions/controller.FilterParams'
+        type: integer
+      - description: Количество объектов на странице
+        example: 5
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: Фильтр (название параметра и параметр через двоеточие)
+        example: name:Иванов
+        in: query
+        name: filter
+        type: string
       produces:
       - application/json
       responses:
@@ -90,7 +90,7 @@ paths:
             $ref: '#/definitions/controller.ErrorResponse'
       summary: Получить всех сотрудников
       tags:
-      - employees
+      - people
   /people:
     delete:
       consumes:
@@ -117,13 +117,14 @@ paths:
             $ref: '#/definitions/controller.ErrorResponse'
       summary: Удалить сотрудника
       tags:
-      - employees
+      - people
     post:
       consumes:
       - application/json
       description: Добавляет нового сотрудника по номеру паспорта
       parameters:
       - description: Номер паспорта (серия и номер через пробел)
+        example: 1234 567890
         in: query
         name: passportNumber
         required: true
@@ -143,13 +144,13 @@ paths:
             $ref: '#/definitions/controller.ErrorResponse'
       summary: Добавить сотрудника
       tags:
-      - employees
+      - people
     put:
       consumes:
       - application/json
       description: Обновляет информацию о сотруднике
       parameters:
-      - description: Информация о сотруднике
+      - description: Информация о сотруднике (серия и номер не изменяются)
         in: body
         name: people
         required: true
@@ -170,19 +171,19 @@ paths:
             $ref: '#/definitions/controller.ErrorResponse'
       summary: Обновить информацию о сотруднике
       tags:
-      - employees
+      - people
   /task:
     get:
       consumes:
       - application/json
       description: Возвращает список задач для указанного сотрудника
       parameters:
-      - description: Информация о сотруднике
-        in: body
-        name: people
+      - description: Идентификатор работника
+        example: 0
+        in: query
+        name: people_id
         required: true
-        schema:
-          $ref: '#/definitions/model.People'
+        type: integer
       produces:
       - application/json
       responses:
@@ -208,12 +209,18 @@ paths:
       - application/json
       description: Добавляет новую задачу
       parameters:
-      - description: Информация о задаче
-        in: body
-        name: task
+      - description: Название задачи
+        example: Новая задача
+        in: query
+        name: name
         required: true
-        schema:
-          $ref: '#/definitions/model.Task'
+        type: string
+      - description: Описание задачи
+        example: Описание...
+        in: query
+        name: description
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -231,17 +238,23 @@ paths:
       tags:
       - tasks
   /taskAssign:
-    patch:
+    put:
       consumes:
       - application/json
       description: Назначает сотрудников на указанную задачу
       parameters:
-      - description: Информация о задаче
-        in: body
-        name: task
+      - description: Идентификатор задачи
+        example: 0
+        in: query
+        name: id
         required: true
-        schema:
-          $ref: '#/definitions/model.Task'
+        type: integer
+      - description: Идентификатор работника
+        example: 0
+        in: query
+        name: people_id
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
@@ -259,17 +272,17 @@ paths:
       tags:
       - tasks
   /taskEnd:
-    patch:
+    put:
       consumes:
       - application/json
       description: Завершает отслеживание времени задачи
       parameters:
-      - description: Информация о задаче
-        in: body
-        name: task
+      - description: Идентификатор задачи
+        example: 0
+        in: query
+        name: id
         required: true
-        schema:
-          $ref: '#/definitions/model.Task'
+        type: integer
       produces:
       - application/json
       responses:
@@ -287,17 +300,17 @@ paths:
       tags:
       - tasks
   /taskStart:
-    patch:
+    put:
       consumes:
       - application/json
       description: Начинает отслеживание времени задачи
       parameters:
-      - description: Информация о задаче
-        in: body
-        name: task
+      - description: Идентификатор задачи
+        example: 0
+        in: query
+        name: id
         required: true
-        schema:
-          $ref: '#/definitions/model.Task'
+        type: integer
       produces:
       - application/json
       responses:

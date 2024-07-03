@@ -28,18 +28,32 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "employees"
+                    "people"
                 ],
                 "summary": "Получить всех сотрудников",
                 "parameters": [
                     {
-                        "description": "Параметры фильтрации",
-                        "name": "filterParams",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/controller.FilterParams"
-                        }
+                        "type": "integer",
+                        "example": 0,
+                        "description": "Страница",
+                        "name": "page",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "example": 5,
+                        "description": "Количество объектов на странице",
+                        "name": "page_size",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "name:Иванов",
+                        "description": "Фильтр (название параметра и параметр через двоеточие)",
+                        "name": "filter",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -77,12 +91,12 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "employees"
+                    "people"
                 ],
                 "summary": "Обновить информацию о сотруднике",
                 "parameters": [
                     {
-                        "description": "Информация о сотруднике",
+                        "description": "Информация о сотруднике (серия и номер не изменяются)",
                         "name": "people",
                         "in": "body",
                         "required": true,
@@ -118,12 +132,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "employees"
+                    "people"
                 ],
                 "summary": "Добавить сотрудника",
                 "parameters": [
                     {
                         "type": "string",
+                        "example": "1234 567890",
                         "description": "Номер паспорта (серия и номер через пробел)",
                         "name": "passportNumber",
                         "in": "query",
@@ -157,7 +172,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "employees"
+                    "people"
                 ],
                 "summary": "Удалить сотрудника",
                 "parameters": [
@@ -203,13 +218,12 @@ const docTemplate = `{
                 "summary": "Получить задачи сотрудника",
                 "parameters": [
                     {
-                        "description": "Информация о сотруднике",
-                        "name": "people",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.People"
-                        }
+                        "type": "integer",
+                        "example": 0,
+                        "description": "Идентификатор работника",
+                        "name": "people_id",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -250,13 +264,20 @@ const docTemplate = `{
                 "summary": "Добавить задачу",
                 "parameters": [
                     {
-                        "description": "Информация о задаче",
-                        "name": "task",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.Task"
-                        }
+                        "type": "string",
+                        "example": "Новая задача",
+                        "description": "Название задачи",
+                        "name": "name",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "Описание...",
+                        "description": "Описание задачи",
+                        "name": "description",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -279,7 +300,7 @@ const docTemplate = `{
             }
         },
         "/taskAssign": {
-            "patch": {
+            "put": {
                 "description": "Назначает сотрудников на указанную задачу",
                 "consumes": [
                     "application/json"
@@ -293,13 +314,20 @@ const docTemplate = `{
                 "summary": "Назначить сотрудников на задачу",
                 "parameters": [
                     {
-                        "description": "Информация о задаче",
-                        "name": "task",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.Task"
-                        }
+                        "type": "integer",
+                        "example": 0,
+                        "description": "Идентификатор задачи",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "example": 0,
+                        "description": "Идентификатор работника",
+                        "name": "people_id",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -322,7 +350,7 @@ const docTemplate = `{
             }
         },
         "/taskEnd": {
-            "patch": {
+            "put": {
                 "description": "Завершает отслеживание времени задачи",
                 "consumes": [
                     "application/json"
@@ -336,13 +364,12 @@ const docTemplate = `{
                 "summary": "Завершить задачу",
                 "parameters": [
                     {
-                        "description": "Информация о задаче",
-                        "name": "task",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.Task"
-                        }
+                        "type": "integer",
+                        "example": 0,
+                        "description": "Идентификатор задачи",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -365,7 +392,7 @@ const docTemplate = `{
             }
         },
         "/taskStart": {
-            "patch": {
+            "put": {
                 "description": "Начинает отслеживание времени задачи",
                 "consumes": [
                     "application/json"
@@ -379,13 +406,12 @@ const docTemplate = `{
                 "summary": "Начать задачу",
                 "parameters": [
                     {
-                        "description": "Информация о задаче",
-                        "name": "task",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.Task"
-                        }
+                        "type": "integer",
+                        "example": 0,
+                        "description": "Идентификатор задачи",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -414,25 +440,6 @@ const docTemplate = `{
             "properties": {
                 "error": {
                     "type": "string"
-                }
-            }
-        },
-        "controller.FilterParams": {
-            "type": "object",
-            "required": [
-                "page",
-                "page_size"
-            ],
-            "properties": {
-                "filters": {
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "page_size": {
-                    "type": "integer"
                 }
             }
         },
@@ -466,6 +473,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "description": {
+                    "type": "string"
+                },
+                "duration": {
                     "type": "string"
                 },
                 "id": {

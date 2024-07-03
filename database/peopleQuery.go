@@ -5,35 +5,40 @@ import (
 	"GoTimeTracker/pkg/logger"
 	"fmt"
 	"go.uber.org/zap"
+	"strconv"
 	"strings"
 )
 
 // GetAllPeople возвращает список сотрудников из базы данных с фильтрами и пагинацией
-func (d *Database) GetAllPeople(page int, pageSize int, filters map[string]interface{}) ([]model.People, error) {
+func (d *Database) GetAllPeople(page int, pageSize int, filterParam, filterValue string) ([]model.People, error) {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 	offset := (page - 1) * pageSize
 
 	var query strings.Builder
-	query.WriteString("SELECT id, name, surname, patronymic, address FROM people")
+	query.WriteString("SELECT * FROM people")
 
 	var args []interface{}
-	var index int
+	argCounter := 1
 
-	// Генерация условий WHERE для каждого фильтра
-	if len(filters) > 0 {
-		query.WriteString(" WHERE ")
-		for key, value := range filters {
-			if index > 0 {
-				query.WriteString(" AND ")
+	if filterParam != "" {
+		if filterParam == "passport_serie" || filterParam == "passport_number" {
+			value, err := strconv.Atoi(filterValue)
+			if err != nil {
+				logger.Error("Ошибка при парсинге значения фильтрации", zap.Error(err))
+				return nil, err
 			}
-			query.WriteString(fmt.Sprintf("%s = $%d", key, index+1))
+			query.WriteString(fmt.Sprintf(" WHERE %s LIKE $%d", filterParam, argCounter))
 			args = append(args, value)
-			index++
+			argCounter++
+		} else {
+			query.WriteString(fmt.Sprintf(" WHERE %s LIKE $%d", filterParam, argCounter))
+			args = append(args, "%"+filterValue+"%")
+			argCounter++
 		}
 	}
 
-	query.WriteString(fmt.Sprintf(" ORDER BY id LIMIT $%d OFFSET $%d", index+1, index+2))
+	query.WriteString(fmt.Sprintf(" ORDER BY id LIMIT $%d OFFSET $%d", argCounter, argCounter+1))
 	args = append(args, pageSize, offset)
 
 	var peoples []model.People
@@ -51,9 +56,9 @@ func (d *Database) AddPeople(p model.People) error {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
-	query := `INSERT INTO people (name, surname, patronymic, address) VALUES ($1, $2, $3, $4) RETURNING id`
+	query := `INSERT INTO people (passport_serie, passport_number, name, surname, patronymic, address) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
 	var id int
-	err := d.db.QueryRow(query, p.Name, p.Surname, p.Patronymic, p.Address).Scan(&id)
+	err := d.db.QueryRow(query, p.PassportSerie, p.PassportNumber, "", "", "", "").Scan(&id)
 	if err != nil {
 		logger.Error("Ошибка при добавлении сотрудника", zap.Error(err))
 		return err

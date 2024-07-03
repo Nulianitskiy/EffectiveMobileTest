@@ -2,11 +2,11 @@ package controller
 
 import (
 	"GoTimeTracker/database"
-	"GoTimeTracker/internal/model"
 	"GoTimeTracker/pkg/logger"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"net/http"
+	"strconv"
 )
 
 type ErrorResponse struct {
@@ -20,17 +20,17 @@ type ErrorResponse struct {
 //	@Tags			tasks
 //	@Accept			json
 //	@Produce		json
-//	@Param			task	body	model.Task	true	"Информация о задаче"
+//
+//	@Param			name		query	string	true	"Название задачи"	example(Новая задача)
+//	@Param			description	query	string	true	"Описание задачи"	example(Описание...)
+//
 //	@Success		200
 //	@Failure		400	{object}	ErrorResponse
 //	@Failure		500	{object}	ErrorResponse
 //	@Router			/task [post]
 func AddTask(ctx *gin.Context) {
-	var t model.Task
-	if err := ctx.ShouldBindJSON(&t); err != nil {
-		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
-		return
-	}
+	name := ctx.Query("name")
+	description := ctx.Query("description")
 
 	db, err := database.GetInstance()
 	if err != nil {
@@ -39,7 +39,7 @@ func AddTask(ctx *gin.Context) {
 		return
 	}
 
-	err = db.AddTask(t)
+	err = db.AddTask(name, description)
 	if err != nil {
 		logger.Error("Ошибка при добавлении задачи", zap.Error(err))
 		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
@@ -57,14 +57,27 @@ func AddTask(ctx *gin.Context) {
 //	@Tags			tasks
 //	@Accept			json
 //	@Produce		json
-//	@Param			task	body	model.Task	true	"Информация о задаче"
+//
+//	@Param			id			query	int	true	"Идентификатор задачи"		example(0)
+//	@Param			people_id	query	int	true	"Идентификатор работника"	example(0)
+//
 //	@Success		200
 //	@Failure		400	{object}	ErrorResponse
 //	@Failure		500	{object}	ErrorResponse
-//	@Router			/taskAssign [patch]
+//	@Router			/taskAssign [put]
 func AssignPeopleOnTask(ctx *gin.Context) {
-	var t model.Task
-	if err := ctx.ShouldBindJSON(&t); err != nil {
+	id := ctx.Query("id")
+	peopleId := ctx.Query("people_id")
+
+	idValue, err := strconv.Atoi(id)
+	if err != nil {
+		logger.Error("Ошибка при парсинге id", zap.Error(err))
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		return
+	}
+	peopleIdValue, err := strconv.Atoi(peopleId)
+	if err != nil {
+		logger.Error("Ошибка при парсинге people_id", zap.Error(err))
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -76,7 +89,7 @@ func AssignPeopleOnTask(ctx *gin.Context) {
 		return
 	}
 
-	err = db.AssignPeopleOnTask(t)
+	err = db.AssignPeopleOnTask(idValue, peopleIdValue)
 	if err != nil {
 		logger.Error("Ошибка при назначении сотрудников на задачу", zap.Error(err))
 		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
@@ -94,14 +107,19 @@ func AssignPeopleOnTask(ctx *gin.Context) {
 //	@Tags			tasks
 //	@Accept			json
 //	@Produce		json
-//	@Param			task	body	model.Task	true	"Информация о задаче"
+//
+//	@Param			id	query	int	true	"Идентификатор задачи"	example(0)
+//
 //	@Success		200
 //	@Failure		400	{object}	ErrorResponse
 //	@Failure		500	{object}	ErrorResponse
-//	@Router			/taskStart [patch]
+//	@Router			/taskStart [put]
 func StartTask(ctx *gin.Context) {
-	var t model.Task
-	if err := ctx.ShouldBindJSON(&t); err != nil {
+	id := ctx.Query("id")
+
+	idValue, err := strconv.Atoi(id)
+	if err != nil {
+		logger.Error("Ошибка при парсинге id", zap.Error(err))
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -113,7 +131,7 @@ func StartTask(ctx *gin.Context) {
 		return
 	}
 
-	err = db.StartTaskTime(t)
+	err = db.StartTaskTime(idValue)
 	if err != nil {
 		logger.Error("Ошибка при начале отслеживания времени задачи", zap.Error(err))
 		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
@@ -131,14 +149,19 @@ func StartTask(ctx *gin.Context) {
 //	@Tags			tasks
 //	@Accept			json
 //	@Produce		json
-//	@Param			task	body	model.Task	true	"Информация о задаче"
+//
+//	@Param			id	query	int	true	"Идентификатор задачи"	example(0)
+//
 //	@Success		200
 //	@Failure		400	{object}	ErrorResponse
 //	@Failure		500	{object}	ErrorResponse
-//	@Router			/taskEnd [patch]
+//	@Router			/taskEnd [put]
 func EndTask(ctx *gin.Context) {
-	var t model.Task
-	if err := ctx.ShouldBindJSON(&t); err != nil {
+	id := ctx.Query("id")
+
+	idValue, err := strconv.Atoi(id)
+	if err != nil {
+		logger.Error("Ошибка при парсинге id", zap.Error(err))
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -150,7 +173,7 @@ func EndTask(ctx *gin.Context) {
 		return
 	}
 
-	err = db.EndTaskTime(t)
+	err = db.EndTaskTime(idValue)
 	if err != nil {
 		logger.Error("Ошибка при завершении отслеживания времени задачи", zap.Error(err))
 		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
@@ -168,14 +191,19 @@ func EndTask(ctx *gin.Context) {
 //	@Tags			tasks
 //	@Accept			json
 //	@Produce		json
-//	@Param			people	body		model.People	true	"Информация о сотруднике"
-//	@Success		200		{array}		model.Task
-//	@Failure		400		{object}	ErrorResponse
-//	@Failure		500		{object}	ErrorResponse
+//
+//	@Param			people_id	query		int	true	"Идентификатор работника"	example(0)
+//
+//	@Success		200			{array}		model.Task
+//	@Failure		400			{object}	ErrorResponse
+//	@Failure		500			{object}	ErrorResponse
 //	@Router			/task [get]
 func GetTasks(ctx *gin.Context) {
-	var p model.People
-	if err := ctx.ShouldBindJSON(&p); err != nil {
+	peopleId := ctx.Query("people_id")
+
+	peopleIdValue, err := strconv.Atoi(peopleId)
+	if err != nil {
+		logger.Error("Ошибка при парсинге people_id", zap.Error(err))
 		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -187,7 +215,7 @@ func GetTasks(ctx *gin.Context) {
 		return
 	}
 
-	tasks, err := db.GetPeopleTasks(p)
+	tasks, err := db.GetPeopleTasks(peopleIdValue)
 	if err != nil {
 		logger.Error("Ошибка при получении задач для сотрудника", zap.Error(err))
 		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
